@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, RotateCcw, SkipForward, Heart, Moon, Sun, Flame, History, Sparkles, Zap, Shuffle, BookOpen, X, Check, Clock, Award, Target, ChevronRight, Mic, MicOff, Square, Download } from "lucide-react";
+import { Play, Pause, RotateCcw, SkipForward, Heart, Moon, Sun, Flame, History, Sparkles, Zap, Shuffle, BookOpen, X, Check, Clock, Award, Target, ChevronRight, Mic, MicOff, Square, Download, Trash2, BarChart3, FileText } from "lucide-react";
 
 // ============ QUESTION DATABASE ============
 const QUESTIONS = {
@@ -304,7 +304,7 @@ export default function App() {
   const [showFavoritesPanel, setShowFavoritesPanel] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [flipKey, setFlipKey] = useState(0);
-  const [evalNotes, setEvalNotes] = useState("");
+  const [evalNotes, setEvalNotes] = useState({ wentWell: "", toImprove: "", takeaway: "", rating: 0 });
 
   // Timer state
   const [speechDuration, setSpeechDuration] = useState(120); // seconds
@@ -341,7 +341,16 @@ export default function App() {
         const p = JSON.parse(data);
         setDarkMode(p.darkMode ?? false);
         setFavorites(p.favorites ?? []);
-        setHistory(p.history ?? []);
+        // Normalize legacy entries (notes as string, missing id)
+        const rawHistory = p.history ?? [];
+        const normalized = rawHistory.map((h, idx) => ({
+          ...h,
+          id: h.id || `legacy-${idx}-${h.date || Date.now()}`,
+          notes: typeof h.notes === "string"
+            ? { wentWell: "", toImprove: "", takeaway: h.notes, rating: 0 }
+            : (h.notes || { wentWell: "", toImprove: "", takeaway: "", rating: 0 }),
+        }));
+        setHistory(normalized);
         setStreak(p.streak ?? 0);
         setLastSessionDate(p.lastSessionDate ?? null);
         setTotalSessions(p.totalSessions ?? 0);
@@ -501,7 +510,7 @@ export default function App() {
     }
     setCurrentQuestion(q);
     setFlipKey((k) => k + 1);
-    setEvalNotes("");
+    setEvalNotes({ wentWell: "", toImprove: "", takeaway: "", rating: 0 });
     return q;
   }, [selectedCategories, challengeMode]);
 
@@ -528,10 +537,16 @@ export default function App() {
   const completeSession = () => {
     if (!currentQuestion) return;
     const today = new Date().toDateString();
-    const newHistory = [
-      { text: currentQuestion.text, category: currentQuestion.category, date: new Date().toISOString(), duration: speechElapsed, notes: evalNotes },
-      ...history,
-    ].slice(0, 50);
+    const entry = {
+      id: Date.now() + Math.random().toString(36).slice(2, 7),
+      text: currentQuestion.text,
+      category: currentQuestion.category,
+      date: new Date().toISOString(),
+      duration: speechElapsed,
+      targetDuration: speechDuration,
+      notes: { ...evalNotes },
+    };
+    const newHistory = [entry, ...history].slice(0, 200);
     setHistory(newHistory);
     setTotalSessions((n) => n + 1);
     // streak
@@ -540,12 +555,14 @@ export default function App() {
       setStreak(lastSessionDate === yesterday ? streak + 1 : 1);
       setLastSessionDate(today);
     }
-    // confidence based on hitting time bracket
+    // confidence based on hitting time bracket + self-rating
     const min = speechDuration * 0.5;
     const max = speechDuration * 1.1;
     let delta = -2;
     if (speechElapsed >= min && speechElapsed <= max) delta = 4;
     else if (speechElapsed >= min * 0.7) delta = 1;
+    if (evalNotes.rating >= 4) delta += 2;
+    else if (evalNotes.rating > 0 && evalNotes.rating <= 2) delta -= 1;
     setConfidenceScore((s) => Math.max(0, Math.min(100, s + delta)));
     setPhase("done");
   };
@@ -628,8 +645,8 @@ export default function App() {
               <Heart className="w-5 h-5" />
               {favorites.length > 0 && <span className="absolute -top-0.5 -right-0.5 text-[10px] bg-rose-700 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">{favorites.length}</span>}
             </button>
-            <button onClick={() => setShowHistoryPanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="History">
-              <History className="w-5 h-5" />
+            <button onClick={() => setShowHistoryPanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Journal">
+              <BookOpen className="w-5 h-5" />
             </button>
             <button onClick={() => setSoundOn(!soundOn)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Toggle sound">
               <span className="text-base">{soundOn ? "🔔" : "🔕"}</span>
@@ -765,15 +782,107 @@ export default function App() {
             {/* Evaluation notes */}
             {(phase === "speaking" || phase === "done") && currentQuestion && (
               <div className="rounded-3xl bg-white dark:bg-stone-900 shadow-lg border border-stone-200 dark:border-stone-800 p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-rose-700 dark:text-rose-400" />
-                  <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-stone-700 dark:text-stone-300">Self-Evaluation</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-rose-700 dark:text-rose-400" />
+                    <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-stone-700 dark:text-stone-300">Self-Evaluation</h3>
+                  </div>
+                  {phase === "done" && (
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400 italic">Auto-saved to journal</span>
+                  )}
                 </div>
-                <textarea
-                  value={evalNotes}
-                  onChange={(e) => setEvalNotes(e.target.value)}
-                  placeholder="How did it go? What worked? What would you improve next time?"
-                  className="w-full h-24 px-4 py-3 rounded-xl bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-rose-700/40 font-sans"
+
+                {/* Star rating */}
+                <div className="mb-4">
+                  <label className="text-[11px] uppercase tracking-[0.18em] font-bold text-stone-600 dark:text-stone-400 block mb-2">Overall Rating</label>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => {
+                          const next = { ...evalNotes, rating: n };
+                          setEvalNotes(next);
+                          if (phase === "done" && history[0]) {
+                            const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
+                            setHistory(updated);
+                          }
+                        }}
+                        className={`w-9 h-9 rounded-lg font-bold transition ${
+                          evalNotes.rating >= n
+                            ? "bg-amber-500 text-white shadow-md shadow-amber-900/20"
+                            : "bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-600 hover:bg-stone-200 dark:hover:bg-stone-700"
+                        }`}
+                        title={`${n} star${n > 1 ? "s" : ""}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                    {evalNotes.rating > 0 && (
+                      <button
+                        onClick={() => {
+                          const next = { ...evalNotes, rating: 0 };
+                          setEvalNotes(next);
+                          if (phase === "done" && history[0]) {
+                            const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
+                            setHistory(updated);
+                          }
+                        }}
+                        className="ml-2 text-[10px] text-stone-500 dark:text-stone-400 hover:text-rose-700 underline"
+                      >
+                        clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Three text fields */}
+                <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  <EvalField
+                    label="What went well"
+                    icon="✓"
+                    accent="emerald"
+                    value={evalNotes.wentWell}
+                    onChange={(v) => {
+                      const next = { ...evalNotes, wentWell: v };
+                      setEvalNotes(next);
+                      if (phase === "done" && history[0]) {
+                        const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
+                        setHistory(updated);
+                      }
+                    }}
+                    placeholder="Strong opening, good eye contact…"
+                  />
+                  <EvalField
+                    label="To improve"
+                    icon="→"
+                    accent="rose"
+                    value={evalNotes.toImprove}
+                    onChange={(v) => {
+                      const next = { ...evalNotes, toImprove: v };
+                      setEvalNotes(next);
+                      if (phase === "done" && history[0]) {
+                        const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
+                        setHistory(updated);
+                      }
+                    }}
+                    placeholder="Pacing, filler words, structure…"
+                  />
+                </div>
+                <EvalField
+                  label="Key takeaway"
+                  icon="★"
+                  accent="amber"
+                  value={evalNotes.takeaway}
+                  onChange={(v) => {
+                    const next = { ...evalNotes, takeaway: v };
+                    setEvalNotes(next);
+                    if (phase === "done" && history[0]) {
+                      const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
+                      setHistory(updated);
+                    }
+                  }}
+                  placeholder="The one thing to remember for next time…"
+                  full
                 />
               </div>
             )}
@@ -978,30 +1087,16 @@ export default function App() {
         </SlideOver>
       )}
 
-      {/* History panel */}
+      {/* Journal panel */}
       {showHistoryPanel && (
-        <SlideOver title="Speaking History" onClose={() => setShowHistoryPanel(false)}>
-          {history.length === 0 ? (
-            <EmptyState icon={<History className="w-10 h-10" />} text="Your past sessions will appear here once you complete a speech." />
-          ) : (
-            <ul className="space-y-2">
-              {history.map((h, i) => (
-                <li key={i} className="p-4 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className={`text-[9px] uppercase tracking-widest font-bold ${CATEGORY_COLORS[h.category]?.text || ""}`}>{h.category}</span>
-                    <div className="flex items-center gap-2 text-[10px] text-stone-500 dark:text-stone-400 font-mono">
-                      <Clock className="w-3 h-3" />
-                      {fmt(h.duration)} · {new Date(h.date).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <p className="text-sm leading-snug" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{h.text}</p>
-                  {h.notes && (
-                    <p className="text-xs italic mt-2 text-stone-600 dark:text-stone-400 border-l-2 border-rose-700 pl-2">{h.notes}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+        <SlideOver title="Speaking Journal" onClose={() => setShowHistoryPanel(false)}>
+          <JournalView
+            history={history}
+            onUpdate={(id, patch) => {
+              setHistory(history.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+            }}
+            onDelete={(id) => setHistory(history.filter((h) => h.id !== id))}
+          />
         </SlideOver>
       )}
 
@@ -1188,6 +1283,284 @@ function EmptyState({ icon, text }) {
     <div className="text-center py-16 text-stone-400 dark:text-stone-600">
       <div className="mx-auto mb-4 flex justify-center">{icon}</div>
       <p className="text-sm max-w-xs mx-auto leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function EvalField({ label, icon, accent, value, onChange, placeholder, full }) {
+  const accentMap = {
+    emerald: "text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50 focus-within:border-emerald-500",
+    rose: "text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 focus-within:border-rose-500",
+    amber: "text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 focus-within:border-amber-500",
+  };
+  return (
+    <div className={`rounded-xl border bg-stone-50 dark:bg-stone-950 p-3 transition ${accentMap[accent]} ${full ? "" : ""}`}>
+      <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold mb-1.5">
+        <span className="text-sm">{icon}</span>
+        {label}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full h-16 bg-transparent text-sm resize-none focus:outline-none text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-600"
+      />
+    </div>
+  );
+}
+
+function JournalView({ history, onUpdate, onDelete }) {
+  const [tab, setTab] = useState("insights");
+  const [expanded, setExpanded] = useState(null);
+
+  if (history.length === 0) {
+    return <EmptyState icon={<History className="w-10 h-10" />} text="Your past sessions and reflections will appear here once you complete a speech." />;
+  }
+
+  // ===== Insights =====
+  const total = history.length;
+  const rated = history.filter((h) => h.notes?.rating > 0);
+  const avgRating = rated.length ? (rated.reduce((s, h) => s + h.notes.rating, 0) / rated.length).toFixed(1) : "—";
+  const avgDuration = Math.round(history.reduce((s, h) => s + (h.duration || 0), 0) / total);
+  const onTarget = history.filter((h) => {
+    if (!h.targetDuration) return false;
+    const min = h.targetDuration * 0.5;
+    const max = h.targetDuration * 1.1;
+    return h.duration >= min && h.duration <= max;
+  }).length;
+  const onTargetPct = Math.round((onTarget / total) * 100);
+
+  // Category breakdown
+  const catCounts = {};
+  history.forEach((h) => { catCounts[h.category] = (catCounts[h.category] || 0) + 1; });
+  const topCategories = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  // Keyword themes (simple frequency on toImprove and wentWell)
+  const extractWords = (field) => {
+    const stopwords = new Set(["the","a","an","i","my","me","was","is","to","of","and","in","on","at","for","with","but","or","so","be","it","that","this","had","have","has","do","did","not","more","less","too","very","good","well","much","also","just","could","would","should","really","need","like","felt","feel"]);
+    const counts = {};
+    history.forEach((h) => {
+      const text = (h.notes?.[field] || "").toLowerCase();
+      text.replace(/[^a-z\s']/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stopwords.has(w)).forEach((w) => {
+        counts[w] = (counts[w] || 0) + 1;
+      });
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  };
+  const improveThemes = extractWords("toImprove");
+  const strengthThemes = extractWords("wentWell");
+
+  // Last 7 sessions trend
+  const recent7 = history.slice(0, 7).reverse();
+
+  const exportJournal = () => {
+    const lines = ["# Tabletopics Trainer — Speaking Journal", "", `Exported ${new Date().toLocaleString()}`, "", `Total sessions: ${total}`, `Average self-rating: ${avgRating} / 5`, `On-target time: ${onTargetPct}%`, "", "---", ""];
+    history.forEach((h) => {
+      lines.push(`## ${new Date(h.date).toLocaleString()} — ${h.category}`);
+      lines.push(`*Q: ${h.text}*`);
+      lines.push(`Duration: ${Math.floor((h.duration || 0) / 60)}:${((h.duration || 0) % 60).toString().padStart(2, "0")}  ·  Rating: ${h.notes?.rating || "—"}/5`);
+      lines.push("");
+      if (h.notes?.wentWell) lines.push(`**Went well:** ${h.notes.wentWell}`);
+      if (h.notes?.toImprove) lines.push(`**To improve:** ${h.notes.toImprove}`);
+      if (h.notes?.takeaway) lines.push(`**Takeaway:** ${h.notes.takeaway}`);
+      lines.push("");
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tabletopics-journal-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  return (
+    <div>
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl mb-4">
+        <button
+          onClick={() => setTab("insights")}
+          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
+            tab === "insights" ? "bg-white dark:bg-stone-700 text-rose-700 dark:text-rose-300 shadow-sm" : "text-stone-500 dark:text-stone-400"
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5" /> Insights
+        </button>
+        <button
+          onClick={() => setTab("entries")}
+          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
+            tab === "entries" ? "bg-white dark:bg-stone-700 text-rose-700 dark:text-rose-300 shadow-sm" : "text-stone-500 dark:text-stone-400"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" /> Entries
+          <span className="text-[9px] bg-stone-200 dark:bg-stone-600 px-1.5 rounded-full">{total}</span>
+        </button>
+      </div>
+
+      {tab === "insights" ? (
+        <div className="space-y-4">
+          {/* Top stats */}
+          <div className="grid grid-cols-2 gap-2">
+            <InsightCard label="Sessions" value={total} accent="text-rose-700 dark:text-rose-400" />
+            <InsightCard label="Avg Rating" value={`${avgRating}${rated.length ? " ★" : ""}`} accent="text-amber-600 dark:text-amber-400" />
+            <InsightCard label="Avg Duration" value={`${Math.floor(avgDuration / 60)}:${(avgDuration % 60).toString().padStart(2, "0")}`} accent="text-emerald-700 dark:text-emerald-400" />
+            <InsightCard label="On Target" value={`${onTargetPct}%`} accent="text-indigo-700 dark:text-indigo-400" />
+          </div>
+
+          {/* Trend mini-chart */}
+          {recent7.length >= 2 && (
+            <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+              <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-600 dark:text-stone-400 mb-3">Recent Ratings</h4>
+              <div className="flex items-end justify-between gap-1.5 h-20">
+                {recent7.map((h, i) => {
+                  const r = h.notes?.rating || 0;
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
+                      <div
+                        className={`w-full rounded-t transition ${r > 0 ? "bg-gradient-to-t from-rose-700 to-rose-500" : "bg-stone-200 dark:bg-stone-700"}`}
+                        style={{ height: `${(r / 5) * 100}%`, minHeight: r > 0 ? "10%" : "4%" }}
+                        title={`${r || "Not rated"} / 5`}
+                      />
+                      <span className="text-[8px] text-stone-500 dark:text-stone-500 font-mono">{r || "·"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[9px] text-stone-400 dark:text-stone-600 text-center mt-2 uppercase tracking-wider">Oldest → Newest</div>
+            </div>
+          )}
+
+          {/* Top categories */}
+          <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+            <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-600 dark:text-stone-400 mb-3">Most Practiced</h4>
+            <div className="space-y-2">
+              {topCategories.map(([cat, count]) => {
+                const pct = (count / total) * 100;
+                return (
+                  <div key={cat}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className={`font-bold ${CATEGORY_COLORS[cat]?.text || ""}`}>{cat}</span>
+                      <span className="text-stone-500 dark:text-stone-400 font-mono">{count}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-stone-200 dark:bg-stone-800 overflow-hidden">
+                      <div className={`h-full ${CATEGORY_COLORS[cat]?.bg || "bg-stone-500"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Themes */}
+          {(strengthThemes.length > 0 || improveThemes.length > 0) && (
+            <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+              <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-600 dark:text-stone-400 mb-3">Recurring Themes</h4>
+              {strengthThemes.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1.5">Strengths</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {strengthThemes.map(([word, count]) => (
+                      <span key={word} className="text-xs px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+                        {word} <span className="text-emerald-500/70">×{count}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {improveThemes.length > 0 && (
+                <div>
+                  <div className="text-[10px] text-rose-700 dark:text-rose-400 font-bold uppercase tracking-wider mb-1.5">Areas to Grow</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {improveThemes.map(([word, count]) => (
+                      <span key={word} className="text-xs px-2 py-1 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+                        {word} <span className="text-rose-500/70">×{count}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-stone-400 dark:text-stone-600 italic mt-3 leading-relaxed">
+                Most common keywords from your notes. The words you keep writing reveal patterns.
+              </p>
+            </div>
+          )}
+
+          {/* Export */}
+          <button
+            onClick={exportJournal}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-sm transition"
+          >
+            <Download className="w-4 h-4" /> Export journal (Markdown)
+          </button>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {history.map((h) => {
+            const isOpen = expanded === h.id;
+            const fmt = (s) => `${Math.floor((s || 0) / 60)}:${((s || 0) % 60).toString().padStart(2, "0")}`;
+            return (
+              <li key={h.id} className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden">
+                <button
+                  onClick={() => setExpanded(isOpen ? null : h.id)}
+                  className="w-full p-4 text-left hover:bg-stone-100 dark:hover:bg-stone-800/50 transition"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className={`text-[9px] uppercase tracking-widest font-bold ${CATEGORY_COLORS[h.category]?.text || ""}`}>{h.category}</span>
+                    <div className="flex items-center gap-2 text-[10px] text-stone-500 dark:text-stone-400 font-mono">
+                      {h.notes?.rating > 0 && <span className="text-amber-600 dark:text-amber-400">{"★".repeat(h.notes.rating)}</span>}
+                      <Clock className="w-3 h-3" />
+                      {fmt(h.duration)} · {new Date(h.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <p className="text-sm leading-snug" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{h.text}</p>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-1 space-y-2 border-t border-stone-200 dark:border-stone-800">
+                    {h.notes?.wentWell && (
+                      <div className="text-xs">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-400">✓ Went well</span>
+                        <p className="mt-0.5 text-stone-700 dark:text-stone-300">{h.notes.wentWell}</p>
+                      </div>
+                    )}
+                    {h.notes?.toImprove && (
+                      <div className="text-xs">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-rose-700 dark:text-rose-400">→ To improve</span>
+                        <p className="mt-0.5 text-stone-700 dark:text-stone-300">{h.notes.toImprove}</p>
+                      </div>
+                    )}
+                    {h.notes?.takeaway && (
+                      <div className="text-xs">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-amber-700 dark:text-amber-400">★ Takeaway</span>
+                        <p className="mt-0.5 text-stone-700 dark:text-stone-300">{h.notes.takeaway}</p>
+                      </div>
+                    )}
+                    {!h.notes?.wentWell && !h.notes?.toImprove && !h.notes?.takeaway && (
+                      <p className="text-xs italic text-stone-400 dark:text-stone-600">No notes recorded for this session.</p>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (confirm("Delete this entry?")) onDelete(h.id);
+                      }}
+                      className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-stone-400 hover:text-rose-700 dark:text-stone-600 dark:hover:text-rose-400 transition mt-2"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete entry
+                    </button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function InsightCard({ label, value, accent }) {
+  return (
+    <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-3">
+      <div className={`text-[10px] uppercase tracking-[0.18em] font-bold ${accent} mb-1`}>{label}</div>
+      <div className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
     </div>
   );
 }
