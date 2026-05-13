@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, RotateCcw, SkipForward, Heart, Moon, Sun, Flame, History, Sparkles, Zap, Shuffle, BookOpen, X, Check, Clock, Award, Target, ChevronRight, Mic, MicOff, Square, Download, Trash2, BarChart3, FileText, Type } from "lucide-react";
+import { Play, Pause, RotateCcw, SkipForward, Heart, Moon, Sun, Flame, History, Sparkles, Zap, Shuffle, BookOpen, X, Check, Clock, Award, Target, ChevronRight, Mic, MicOff, Square, Download, Trash2, BarChart3, FileText, Type, HelpCircle } from "lucide-react";
 
 // ============ QUESTION DATABASE ============
 const QUESTIONS = {
@@ -861,6 +861,7 @@ export default function App() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [showFavoritesPanel, setShowFavoritesPanel] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showGuidePanel, setShowGuidePanel] = useState(false);
   const [flipKey, setFlipKey] = useState(0);
   const [evalNotes, setEvalNotes] = useState({ wentWell: "", toImprove: "", takeaway: "", rating: 0 });
 
@@ -1214,6 +1215,9 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button onClick={() => setShowGuidePanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Guide & Help">
+              <HelpCircle className="w-5 h-5" />
+            </button>
             <button onClick={() => setShowFavoritesPanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition relative" title="Favorites">
               <Heart className="w-5 h-5" />
               {favorites.length > 0 && <span className="absolute -top-0.5 -right-0.5 text-[10px] bg-rose-700 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">{favorites.length}</span>}
@@ -1698,6 +1702,13 @@ export default function App() {
             }}
             onDelete={(id) => setHistory(history.filter((h) => h.id !== id))}
           />
+        </SlideOver>
+      )}
+
+      {/* Guide & Help panel */}
+      {showGuidePanel && (
+        <SlideOver title="Guide & Help" onClose={() => setShowGuidePanel(false)}>
+          <GuideView />
         </SlideOver>
       )}
 
@@ -2189,6 +2200,248 @@ function InsightCard({ label, value, accent }) {
     <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-3">
       <div className={`text-[10px] uppercase tracking-[0.18em] font-bold ${accent} mb-1`}>{label}</div>
       <div className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
+    </div>
+  );
+}
+
+function GuideView() {
+  const [tab, setTab] = useState("howto");
+
+  const tabs = [
+    { id: "howto", label: "How to Use" },
+    { id: "modes", label: "Modes" },
+    { id: "categories", label: "Categories" },
+    { id: "journal", label: "Journal" },
+    { id: "tips", label: "Tips" },
+  ];
+
+  return (
+    <div>
+      {/* Intro card */}
+      <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/20 border border-rose-200 dark:border-rose-900/50 p-4 mb-4">
+        <h3 className="text-lg font-bold mb-1" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>Welcome, speaker.</h3>
+        <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+          Tabletopics Trainer is a private practice space for impromptu speaking — the Toastmasters art of speaking on a topic you didn't see coming. Draw a question, take 30 seconds to think, then speak. The more you practice, the more confident you become.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl mb-4 overflow-x-auto">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 min-w-fit px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition whitespace-nowrap ${
+              tab === t.id ? "bg-white dark:bg-stone-700 text-rose-700 dark:text-rose-300 shadow-sm" : "text-stone-500 dark:text-stone-400"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "howto" && (
+        <div className="space-y-3">
+          <GuideSection title="The basic loop" body={
+            <ol className="space-y-2 text-sm text-stone-700 dark:text-stone-300">
+              <li className="flex gap-2"><Step n={1} /> <span>Tap <b>Start</b>. A random question appears and a 30-second prep timer begins automatically.</span></li>
+              <li className="flex gap-2"><Step n={2} /> <span>Use the prep time to gather your thoughts. A soft tick sounds in the final 6 seconds.</span></li>
+              <li className="flex gap-2"><Step n={3} /> <span>A chime signals the speaking phase. Deliver your speech aiming for the green/yellow/red Toastmasters timing zones.</span></li>
+              <li className="flex gap-2"><Step n={4} /> <span>Tap <b>Done</b> when you finish (or it auto-ends after the red mark). Optionally fill in self-evaluation — what went well, what to improve, key takeaway, plus a 1-5 star rating.</span></li>
+              <li className="flex gap-2"><Step n={5} /> <span>Tap <b>Next</b> to draw a new question. Everything is saved to your Journal automatically.</span></li>
+            </ol>
+          } />
+          <GuideSection title="The buttons" body={
+            <ul className="space-y-1.5 text-xs text-stone-700 dark:text-stone-300">
+              <li><b>Start</b> — draws a question and begins the prep timer in one tap</li>
+              <li><b>Pause</b> — pauses the active timer (prep or speaking)</li>
+              <li><b>Reset</b> — clears the current session and returns to idle</li>
+              <li><b>Done</b> — finishes the speech and saves it to your journal</li>
+              <li><b>Next</b> — completes the current session and starts a new one immediately</li>
+            </ul>
+          } />
+          <GuideSection title="Timer zones" body={
+            <div className="text-xs text-stone-700 dark:text-stone-300 space-y-1.5">
+              <p>The speech timer mimics traditional Toastmasters timing lights:</p>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-600 shrink-0" /> <span><b>Green</b> at 50% of target — minimum qualifying time</span></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-amber-500 shrink-0" /> <span><b>Yellow</b> at 75% — start wrapping up</span></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-rose-700 shrink-0" /> <span><b>Red</b> at 100% — your target time</span></div>
+              <p className="italic text-stone-500 dark:text-stone-400 mt-1">A subtle bell rings at each zone.</p>
+            </div>
+          } />
+          <GuideSection title="Recording your speech" body={
+            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              Turn on <b>Record my speech</b> in the sidebar. After the prep ends, your microphone activates automatically (browser will ask permission the first time). When the speech ends, a playback widget appears so you can hear how you sounded. The last 5 takes are kept; everything stays in your browser only.
+            </p>
+          } />
+        </div>
+      )}
+
+      {tab === "modes" && (
+        <div className="space-y-3">
+          <ModeGuideCard
+            icon={<Zap className="w-5 h-5" />}
+            color="purple"
+            name="Challenge Mode"
+            tagline="Adds a style twist to how you speak"
+            body="A creative constraint is appended to your question — for example, 'speak only in questions', 'use a metaphor in every sentence', or 'speak as if you were 100 years old'. Tests your delivery flexibility."
+          />
+          <ModeGuideCard
+            icon={<Type className="w-5 h-5" />}
+            color="sky"
+            name="Word of the Day"
+            tagline="Must use a vocabulary word in your speech"
+            body="A random word with its definition appears alongside the question. You must weave it into your speech naturally. Builds vocabulary, verbal agility, and on-the-fly composition. 81 carefully-chosen words in the bank."
+          />
+          <ModeGuideCard
+            icon={<Flame className="w-5 h-5" />}
+            color="red"
+            name="Hot Seat"
+            tagline="Rapid-fire drill · 30s per speech · not journaled"
+            body="High-pressure simulation. Prep time shrinks to 10 seconds and speeches auto-cut at 30 seconds. A round counter tracks how many questions you've answered. A red countdown panel flashes at the 5-second mark before auto-advance. Hot Seat sessions are deliberately excluded from your journal — it's a drill, not a tracked attempt."
+          />
+          <div className="rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-3 text-xs text-stone-600 dark:text-stone-400 italic">
+            Modes stack. You can combine Challenge + Word of the Day for a harder session, or layer Hot Seat on top for full chaos.
+          </div>
+        </div>
+      )}
+
+      {tab === "categories" && (
+        <div className="space-y-2">
+          <p className="text-xs text-stone-600 dark:text-stone-400 mb-3">
+            The app has <b>646 questions</b> across <b>14 categories</b>. Tap a category chip in the sidebar to include or exclude it from the random pool. Use the <b>Shuffle</b> button to randomly pick a subset.
+          </p>
+          <CategoryRow name="Centennial Favorites" desc="100 historical and ceremonial Toastmasters questions from the organization's 100-year archive" />
+          <CategoryRow name="Self-Reflection" desc="Introspective prompts about identity, values, and inner life" />
+          <CategoryRow name="Growth & Goals" desc="Action-oriented questions about change, ambition, and the path forward" />
+          <CategoryRow name="Memories" desc="Stories from your past — childhood, milestones, defining moments" />
+          <CategoryRow name="Life & Mortality" desc="Legacy, time, and what truly matters in the long view" />
+          <CategoryRow name="Relationships" desc="Friendship, family, love, trust, and how we connect" />
+          <CategoryRow name="Career" desc="Work, ambition, success, and professional growth" />
+          <CategoryRow name="Leadership" desc="What makes a leader — vision, influence, and example" />
+          <CategoryRow name="Philosophy" desc="Big abstract questions about ethics, meaning, and human nature" />
+          <CategoryRow name="Deep" desc="Reflective prompts requiring substantive thought" />
+          <CategoryRow name="Storytelling" desc="Anecdotal prompts — share a story about a specific moment or experience" />
+          <CategoryRow name="Funny" desc="Lighthearted, absurd, or imaginative prompts" />
+          <CategoryRow name="Technology" desc="Modern life, AI, the internet, and how tech shapes us" />
+          <CategoryRow name="Rapid Fire" desc="Short, snappy, answer-in-30-seconds questions" />
+        </div>
+      )}
+
+      {tab === "journal" && (
+        <div className="space-y-3">
+          <GuideSection title="What gets saved" body={
+            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              Every completed speech is automatically logged: the question, category, duration, target time, your self-evaluation (went well / to improve / takeaway / star rating), and the Word of the Day if used. Hot Seat sessions are deliberately excluded.
+            </p>
+          } />
+          <GuideSection title="Insights tab" body={
+            <ul className="space-y-1 text-xs text-stone-700 dark:text-stone-300">
+              <li><b>Sessions</b> — your total count</li>
+              <li><b>Avg Rating</b> — your average self-score out of 5</li>
+              <li><b>Avg Duration</b> — how long your speeches typically run</li>
+              <li><b>On Target</b> — % of speeches that hit the green-to-red time window</li>
+              <li><b>Recent Ratings chart</b> — last 7 sessions at a glance</li>
+              <li><b>Most Practiced</b> — top categories with progress bars</li>
+              <li><b>Recurring Themes</b> — automatic keyword extraction from your notes; strengths in green, areas to grow in rose</li>
+            </ul>
+          } />
+          <GuideSection title="Entries tab" body={
+            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              Browse every past session. Tap any entry to expand and see your full notes, rating, and the word (if used). Delete unwanted entries from the same expanded view.
+            </p>
+          } />
+          <GuideSection title="Export" body={
+            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              The <b>Export journal</b> button at the bottom of Insights downloads everything as a Markdown file you can open anywhere — paste into Notion, print, share with a mentor, or just back up.
+            </p>
+          } />
+          <GuideSection title="Confidence score" body={
+            <div className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed space-y-1.5">
+              <p>Your Confidence stat (shown at the top of the app) is a rolling indicator. It moves based on two things per session:</p>
+              <p><b>Time discipline:</b> +4 if you land in the green-to-red zone, +1 if at least 35% of target, −2 if too short.</p>
+              <p><b>Self-rating:</b> +2 bonus for 4-5 stars, −1 for 1-2 stars.</p>
+              <p>Starts at 50%, capped 0-100. Best case +6 per session, worst case −3.</p>
+            </div>
+          } />
+        </div>
+      )}
+
+      {tab === "tips" && (
+        <div className="space-y-3">
+          <Tip n={1} text="Pick a category mix and stick with it for a few sessions before changing. Patterns reveal themselves over time." />
+          <Tip n={2} text="Write notes WHILE the eval form is open — your impressions fade fast after the speech ends." />
+          <Tip n={3} text="The 30-second prep is a feature, not a constraint. Use the full time even if you have an idea early." />
+          <Tip n={4} text="Aim for the green-to-yellow zone — that's where speeches feel finished but not rambling." />
+          <Tip n={5} text="Record yourself periodically. You'll catch filler words and pacing issues you can't notice while speaking." />
+          <Tip n={6} text="Use Hot Seat as warmup before a real Toastmasters meeting, not for serious practice." />
+          <Tip n={7} text="Export your journal monthly — it's nice to read your reflections in one place outside the app." />
+          <Tip n={8} text="The more specific your 'To improve' notes, the more useful the Recurring Themes view becomes." />
+        </div>
+      )}
+
+      <div className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-800 text-center">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600">
+          Created by JuXGTMC · 2026
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function GuideSection({ title, body }) {
+  return (
+    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+      <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-rose-700 dark:text-rose-400 mb-2">{title}</h4>
+      {body}
+    </div>
+  );
+}
+
+function Step({ n }) {
+  return (
+    <span className="shrink-0 w-5 h-5 rounded-full bg-rose-700 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{n}</span>
+  );
+}
+
+function Tip({ n, text }) {
+  return (
+    <div className="flex gap-3 p-3 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+      <span className="shrink-0 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center mt-0.5">{n}</span>
+      <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function ModeGuideCard({ icon, color, name, tagline, body }) {
+  const colorMap = {
+    purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-purple-200 dark:border-purple-900/50",
+    sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-900/50",
+    red: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-900/50",
+  };
+  return (
+    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`p-2 rounded-lg border ${colorMap[color]}`}>{icon}</div>
+        <div>
+          <h4 className="text-sm font-bold" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{name}</h4>
+          <p className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-bold">{tagline}</p>
+        </div>
+      </div>
+      <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed mt-2">{body}</p>
+    </div>
+  );
+}
+
+function CategoryRow({ name, desc }) {
+  const colors = CATEGORY_COLORS[name];
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+      <span className={`shrink-0 mt-0.5 w-2.5 h-2.5 rounded-full ${colors?.bg || "bg-stone-400"}`} />
+      <div className="min-w-0">
+        <div className={`text-[11px] uppercase tracking-wider font-bold ${colors?.text || ""}`}>{name}</div>
+        <p className="text-xs text-stone-600 dark:text-stone-400 mt-0.5 leading-relaxed">{desc}</p>
+      </div>
     </div>
   );
 }
