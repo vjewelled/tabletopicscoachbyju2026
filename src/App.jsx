@@ -1202,33 +1202,33 @@ export default function App() {
 
       {/* Header */}
       <header className="relative z-10 border-b border-stone-200 dark:border-stone-800 backdrop-blur-md bg-stone-50/70 dark:bg-[#0a0e1a]/70 sticky top-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-700 to-rose-900 flex items-center justify-center shadow-lg shadow-rose-900/20 shrink-0">
-              <span className="text-white font-bold text-lg" style={{ fontFamily: "Georgia, serif" }}>T</span>
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-rose-700 to-rose-900 flex items-center justify-center shadow-lg shadow-rose-900/20 shrink-0">
+              <span className="text-white font-bold text-base sm:text-lg" style={{ fontFamily: "Georgia, serif" }}>T</span>
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-none truncate" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight leading-tight truncate" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>
                 Tabletopics Trainer
               </h1>
-              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400 mt-1">Impromptu Practice</p>
+              <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400 mt-0.5 sm:mt-1 truncate">Impromptu Practice</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <button onClick={() => setShowGuidePanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Guide & Help">
+          <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
+            <button onClick={() => setShowGuidePanel(true)} className="p-1.5 sm:p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Guide & Help">
               <HelpCircle className="w-5 h-5" />
             </button>
-            <button onClick={() => setShowFavoritesPanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition relative" title="Favorites">
+            <button onClick={() => setShowFavoritesPanel(true)} className="p-1.5 sm:p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition relative" title="Favorites">
               <Heart className="w-5 h-5" />
               {favorites.length > 0 && <span className="absolute -top-0.5 -right-0.5 text-[10px] bg-rose-700 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">{favorites.length}</span>}
             </button>
-            <button onClick={() => setShowHistoryPanel(true)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Journal">
+            <button onClick={() => setShowHistoryPanel(true)} className="p-1.5 sm:p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Journal">
               <BookOpen className="w-5 h-5" />
             </button>
-            <button onClick={() => setSoundOn(!soundOn)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Toggle sound">
+            <button onClick={() => setSoundOn(!soundOn)} className="p-1.5 sm:p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Toggle sound">
               <span className="text-base">{soundOn ? "🔔" : "🔕"}</span>
             </button>
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Theme">
+            <button onClick={() => setDarkMode(!darkMode)} className="p-1.5 sm:p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition" title="Theme">
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
           </div>
@@ -2216,7 +2216,7 @@ function GuideView() {
   ];
 
   return (
-    <div>
+    <div className="text-left">
       {/* Intro card */}
       <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/20 border border-rose-200 dark:border-rose-900/50 p-4 mb-4">
         <h3 className="text-lg font-bold mb-1" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>Welcome, speaker.</h3>
@@ -2391,7 +2391,7 @@ function GuideView() {
 
 function GuideSection({ title, body }) {
   return (
-    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4 text-left">
       <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-rose-700 dark:text-rose-400 mb-2">{title}</h4>
       {body}
     </div>
@@ -2406,7 +2406,7 @@ function Step({ n }) {
 
 function Tip({ n, text }) {
   return (
-    <div className="flex gap-3 p-3 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+    <div className="flex gap-3 p-3 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-left">
       <span className="shrink-0 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center mt-0.5">{n}</span>
       <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">{text}</p>
     </div>
@@ -2420,7 +2420,7 @@ function ModeGuideCard({ icon, color, name, tagline, body }) {
     red: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-900/50",
   };
   return (
-    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4">
+    <div className="rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4 text-left">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded-lg border ${colorMap[color]}`}>{icon}</div>
         <div>
