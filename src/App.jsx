@@ -1208,7 +1208,7 @@ export default function App() {
               <span className="text-white font-bold text-base sm:text-lg" style={{ fontFamily: "Georgia, serif" }}>T</span>
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight leading-tight truncate" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight leading-tight truncate text-slate-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>
                 Tabletopics Trainer
               </h1>
               <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400 mt-0.5 sm:mt-1 truncate">Impromptu Practice</p>
@@ -1666,7 +1666,7 @@ export default function App() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <span className={`text-[9px] uppercase tracking-widest font-bold ${CATEGORY_COLORS[f.category].text} dark:${CATEGORY_COLORS[f.category].dark.split(" ")[1]}`}>{f.category}</span>
-                      <p className="text-sm mt-1 leading-snug" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{f.text}</p>
+                      <p className="text-sm mt-1 leading-snug text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{f.text}</p>
                     </div>
                     <div className="flex flex-col gap-1 shrink-0">
                       <button
@@ -1739,7 +1739,7 @@ function StatCard({ icon, label, value, accent }) {
         {icon}
         <span className="text-[10px] uppercase tracking-[0.18em] font-bold">{label}</span>
       </div>
-      <div className="text-xl sm:text-2xl font-bold tracking-tight" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
+      <div className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
     </div>
   );
 }
@@ -1811,7 +1811,7 @@ function PrepRing({ remaining, total, active }) {
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{remaining}</div>
+          <div className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{remaining}</div>
           <div className="text-[10px] uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400 mt-1">seconds</div>
         </div>
       </div>
@@ -1895,7 +1895,7 @@ function SlideOver({ title, children, onClose }) {
       <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm" onClick={onClose} style={{ animation: "fadeIn 0.3s ease" }} />
       <div className="ml-auto relative w-full max-w-md h-full bg-stone-50 dark:bg-[#0a0e1a] border-l border-stone-200 dark:border-stone-800 shadow-2xl flex flex-col" style={{ animation: "slideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1)" }}>
         <div className="flex items-center justify-between p-5 border-b border-stone-200 dark:border-stone-800">
-          <h2 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{title}</h2>
+          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{title}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition">
             <X className="w-5 h-5" />
           </button>
@@ -2144,7 +2144,7 @@ function JournalView({ history, onUpdate, onDelete }) {
                       {fmt(h.duration)} · {new Date(h.date).toLocaleDateString()}
                     </div>
                   </div>
-                  <p className="text-sm leading-snug" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{h.text}</p>
+                  <p className="text-sm leading-snug text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{h.text}</p>
                 </button>
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1 space-y-2 border-t border-stone-200 dark:border-stone-800">
@@ -2199,7 +2199,7 @@ function InsightCard({ label, value, accent }) {
   return (
     <div className="rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-3">
       <div className={`text-[10px] uppercase tracking-[0.18em] font-bold ${accent} mb-1`}>{label}</div>
-      <div className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
+      <div className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{value}</div>
     </div>
   );
 }
@@ -2219,7 +2219,7 @@ function GuideView() {
     <div className="text-left">
       {/* Intro card */}
       <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/20 border border-rose-200 dark:border-rose-900/50 p-4 mb-4">
-        <h3 className="text-lg font-bold mb-1" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>Welcome, speaker.</h3>
+        <h3 className="text-lg font-bold mb-1 text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>Welcome, speaker.</h3>
         <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
           Tabletopics Trainer is a private practice space for impromptu speaking — the Toastmasters art of speaking on a topic you didn't see coming. Draw a question, take 30 seconds to think, then speak. The more you practice, the more confident you become.
         </p>
@@ -2424,7 +2424,7 @@ function ModeGuideCard({ icon, color, name, tagline, body }) {
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded-lg border ${colorMap[color]}`}>{icon}</div>
         <div>
-          <h4 className="text-sm font-bold" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{name}</h4>
+          <h4 className="text-sm font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: "Playfair Display, Georgia, serif" }}>{name}</h4>
           <p className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-bold">{tagline}</p>
         </div>
       </div>
