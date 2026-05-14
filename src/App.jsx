@@ -864,6 +864,8 @@ export default function App() {
   const [showGuidePanel, setShowGuidePanel] = useState(false);
   const [flipKey, setFlipKey] = useState(0);
   const [evalNotes, setEvalNotes] = useState({ wentWell: "", toImprove: "", takeaway: "", rating: 0 });
+  const [savedEntryId, setSavedEntryId] = useState(null); // id of the saved journal entry for current session
+  const [justSaved, setJustSaved] = useState(false); // brief "Saved ✓" feedback
 
   // Timer state
   const [speechDuration, setSpeechDuration] = useState(120); // seconds
@@ -1077,6 +1079,7 @@ export default function App() {
     setCurrentQuestion(q);
     setFlipKey((k) => k + 1);
     setEvalNotes({ wentWell: "", toImprove: "", takeaway: "", rating: 0 });
+    setSavedEntryId(null);
     return q;
   }, [selectedCategories, challengeMode, wordMode]);
 
@@ -1102,16 +1105,23 @@ export default function App() {
     setHotSeatRound(0);
   };
 
-  const completeSession = () => {
-    if (!currentQuestion) return;
-    // Hot Seat sessions don't save to journal or affect stats — it's a drill, not a tracked attempt
-    if (hotSeatMode) {
-      setPhase("done");
-      return;
-    }
+  // Save or update the current session in the journal. Idempotent — if a save already exists for this session, updates it.
+  const saveEvaluation = () => {
+    if (!currentQuestion || hotSeatMode) return false;
     const today = new Date().toDateString();
+    // If we've already saved this session, update the existing entry
+    if (savedEntryId) {
+      setHistory(history.map((h) => h.id === savedEntryId
+        ? { ...h, notes: { ...evalNotes }, duration: speechElapsed }
+        : h));
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1500);
+      return true;
+    }
+    // Otherwise create a new entry
+    const id = Date.now() + Math.random().toString(36).slice(2, 7);
     const entry = {
-      id: Date.now() + Math.random().toString(36).slice(2, 7),
+      id,
       text: currentQuestion.text,
       category: currentQuestion.category,
       word: currentQuestion.word || null,
@@ -1120,8 +1130,8 @@ export default function App() {
       targetDuration: speechDuration,
       notes: { ...evalNotes },
     };
-    const newHistory = [entry, ...history].slice(0, 200);
-    setHistory(newHistory);
+    setHistory([entry, ...history].slice(0, 200));
+    setSavedEntryId(id);
     setTotalSessions((n) => n + 1);
     // streak
     if (lastSessionDate !== today) {
@@ -1138,6 +1148,18 @@ export default function App() {
     if (evalNotes.rating >= 4) delta += 2;
     else if (evalNotes.rating > 0 && evalNotes.rating <= 2) delta -= 1;
     setConfidenceScore((s) => Math.max(0, Math.min(100, s + delta)));
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1500);
+    return true;
+  };
+
+  const completeSession = () => {
+    if (!currentQuestion) return;
+    if (hotSeatMode) {
+      setPhase("done");
+      return;
+    }
+    saveEvaluation();
     setPhase("done");
   };
 
@@ -1384,15 +1406,17 @@ export default function App() {
             )}
 
             {/* Evaluation notes */}
-            {(phase === "speaking" || phase === "done") && currentQuestion && (
+            {(phase === "speaking" || phase === "done") && currentQuestion && !hotSeatMode && (
               <div className="rounded-3xl bg-white dark:bg-stone-900 shadow-lg border border-stone-200 dark:border-stone-800 p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                     <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-stone-700 dark:text-stone-300">Self-Evaluation</h3>
                   </div>
-                  {phase === "done" && (
-                    <span className="text-[10px] text-stone-500 dark:text-stone-400 italic">Auto-saved to journal</span>
+                  {savedEntryId && (
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 italic flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Saved to journal — edits auto-update
+                    </span>
                   )}
                 </div>
 
@@ -1406,9 +1430,8 @@ export default function App() {
                         onClick={() => {
                           const next = { ...evalNotes, rating: n };
                           setEvalNotes(next);
-                          if (phase === "done" && history[0]) {
-                            const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
-                            setHistory(updated);
+                          if (savedEntryId) {
+                            setHistory(history.map((h) => h.id === savedEntryId ? { ...h, notes: next } : h));
                           }
                         }}
                         className={`w-9 h-9 rounded-lg font-bold transition ${
@@ -1426,9 +1449,8 @@ export default function App() {
                         onClick={() => {
                           const next = { ...evalNotes, rating: 0 };
                           setEvalNotes(next);
-                          if (phase === "done" && history[0]) {
-                            const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
-                            setHistory(updated);
+                          if (savedEntryId) {
+                            setHistory(history.map((h) => h.id === savedEntryId ? { ...h, notes: next } : h));
                           }
                         }}
                         className="ml-2 text-[10px] text-stone-500 dark:text-stone-400 hover:text-rose-700 underline"
@@ -1449,9 +1471,8 @@ export default function App() {
                     onChange={(v) => {
                       const next = { ...evalNotes, wentWell: v };
                       setEvalNotes(next);
-                      if (phase === "done" && history[0]) {
-                        const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
-                        setHistory(updated);
+                      if (savedEntryId) {
+                        setHistory(history.map((h) => h.id === savedEntryId ? { ...h, notes: next } : h));
                       }
                     }}
                     placeholder="Strong opening, good eye contact…"
@@ -1464,9 +1485,8 @@ export default function App() {
                     onChange={(v) => {
                       const next = { ...evalNotes, toImprove: v };
                       setEvalNotes(next);
-                      if (phase === "done" && history[0]) {
-                        const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
-                        setHistory(updated);
+                      if (savedEntryId) {
+                        setHistory(history.map((h) => h.id === savedEntryId ? { ...h, notes: next } : h));
                       }
                     }}
                     placeholder="Pacing, filler words, structure…"
@@ -1480,14 +1500,44 @@ export default function App() {
                   onChange={(v) => {
                     const next = { ...evalNotes, takeaway: v };
                     setEvalNotes(next);
-                    if (phase === "done" && history[0]) {
-                      const updated = [{ ...history[0], notes: next }, ...history.slice(1)];
-                      setHistory(updated);
+                    if (savedEntryId) {
+                      setHistory(history.map((h) => h.id === savedEntryId ? { ...h, notes: next } : h));
                     }
                   }}
                   placeholder="The one thing to remember for next time…"
                   full
                 />
+
+                {/* Save button */}
+                <button
+                  onClick={saveEvaluation}
+                  className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition shadow-md ${
+                    justSaved
+                      ? "bg-emerald-600 text-white shadow-emerald-900/20"
+                      : savedEntryId
+                      ? "bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-stone-700"
+                      : "bg-rose-800 hover:bg-rose-900 text-white shadow-rose-900/20"
+                  }`}
+                >
+                  {justSaved ? (
+                    <>
+                      <Check className="w-4 h-4" /> Saved!
+                    </>
+                  ) : savedEntryId ? (
+                    <>
+                      <Check className="w-4 h-4" /> Update saved entry
+                    </>
+                  ) : (
+                    <>
+                      <BookOpen className="w-4 h-4" /> Save to journal
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-stone-400 dark:text-stone-600 text-center mt-2 italic">
+                  {savedEntryId
+                    ? "This session is saved. Keep editing — your changes auto-save."
+                    : "Save anytime — you don't need to finish the speech first."}
+                </p>
               </div>
             )}
           </div>
